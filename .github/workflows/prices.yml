@@ -1,0 +1,41 @@
+# Builds and publishes the site with fresh prices.
+# Runs on every push to main, about every 30 minutes while the Taiwan and US markets are open
+# (times are UTC: 01-05 = Taipei 09-13, 13-21 = New York trading hours), and by hand.
+name: Update prices and publish
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "7,37 1-5 * * 1-5"
+    - cron: "7,37 13-21 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Fetch prices
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: python3 scripts/fetch_prices.py
+      - name: Collect site files
+        run: |
+          mkdir _site
+          cp index.html prices.json robots.txt .nojekyll _site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
