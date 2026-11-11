@@ -154,10 +154,11 @@ details.events summary::-webkit-details-marker{display:none}details.events summa
 .sec{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--ink);border-radius:4px 4px 12px 12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;min-width:0}
 .sec p{margin:0;max-width:72ch}
 .sec ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
-.score{display:grid;grid-template-columns:5.8em 1fr;gap:4px 12px;align-items:start}
-.score .tag{display:inline-flex;justify-content:center;align-items:center;gap:5px;font-size:.74rem;font-weight:700;border-radius:999px;padding:2px 9px 2px 7px;white-space:nowrap;margin-top:1px}
-.score .tag i{font-style:normal;font-size:.8rem;line-height:1}
-.sclegend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.74rem;color:var(--muted)}
+.score{display:grid;grid-template-columns:26px 1fr;gap:4px 10px;align-items:start}
+.score .tag,.sclegend .tag{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:.78rem;font-weight:700;margin-top:2px}
+.sclegend>span{display:inline-flex;align-items:center;gap:5px}
+.sclegend .tag{width:16px;height:16px;font-size:.62rem;margin:0}
+.sclegend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.76rem;color:var(--muted);margin-top:-2px}
 .score .g{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:.85rem}
 .g-ok{background:var(--good-soft);color:var(--good)} .g-warn{background:var(--warn-soft);color:var(--warn)} .g-bad{background:var(--bad-soft);color:var(--bad)} .g-na{background:var(--sunk);color:var(--muted)}
 .score b{font-weight:500}
@@ -548,12 +549,12 @@ window.RLIB_CFG = {
 
     h += '<div class="grid2">';
     h += '<section class="sec"><h2>業務</h2>'+para(r.business)+'</section>';
-    h += '<section class="sec"><h2>品質與估值檢查</h2>';
+    h += '<section class="sec"><h2>品質與估值檢查</h2><div class="sclegend"><span><span class="tag g-ok">✓</span>沒問題</span><span><span class="tag g-warn">!</span>要注意</span><span><span class="tag g-bad">✕</span>有疑慮</span><span><span class="tag g-na">–</span>未查</span></div>';
     const sc = r.scores||{};
     [["A","成長與被取代"],["B","護城河"],["C","說到做到"],["D","估值"]].forEach(([k,t])=>{
       const s = sc[k]||{g:"na",t:"（未記錄）"};
       const L = {ok:["✓","沒問題"], warn:["!","要注意"], bad:["✕","有疑慮"], na:["–","未查"]}[s.g] || ["–","未查"];
-      h += '<div class="score"><span class="tag '+(GRADE[s.g]||"g-na")+'"><i>'+L[0]+'</i>'+L[1]+'</span><div><b>'+t+'</b><div class="small">'+esc(s.t||"")+'</div></div></div>';
+      h += '<div class="score"><span class="tag '+(GRADE[s.g]||"g-na")+'" title="'+L[1]+'" aria-label="'+L[1]+'">'+L[0]+'</span><div><b>'+t+'</b><div class="small">'+esc(s.t||"")+'</div></div></div>';
     });
     h += '</section></div>';
 
