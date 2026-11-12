@@ -243,8 +243,8 @@ window.RLIB_CFG = {
   let rows = [];
   let loaded = false;
   let note = "";
-  const ui = {market:"US", status:"all", theme:"all", q:"", sort:"status", stale:false};
-  try { const s = JSON.parse(localStorage.getItem(CFG.storeKey)||"null"); if (s) Object.assign(ui, s, {q:""}); } catch(e){}
+  const ui = {market:"US", status:"all", theme:"all", q:"", sort:"mcap", stale:false, v:2};
+  try { const s = JSON.parse(localStorage.getItem(CFG.storeKey)||"null"); if (s){ Object.assign(ui, s, {q:""}); if (!s.v){ ui.sort="mcap"; ui.v=2; } } } catch(e){}
   function saveUi(){ try{ localStorage.setItem(CFG.storeKey, JSON.stringify(ui)); }catch(e){} }
 
   const $view = document.getElementById("view");
@@ -377,7 +377,17 @@ window.RLIB_CFG = {
     const cl = capLine(r);
     return (cl? '<span class="cap">'+esc(cl)+'</span>' : '')+riskTag(r);
   }
+  /* market cap in USD for sorting: live value when the page has prices, otherwise the size class */
+  function capKey(r){
+    const m = (typeof mcapOf==="function") ? mcapOf(r) : null;
+    if (m && m.usd) return m.usd;
+    return ({mega:3e11, large:5e10, mid:6e9, small:1e9, micro:1e8})[r.size] || 0;
+  }
+  let resortedOnLive = false;
   function paintLiveParts(){
+    if (!resortedOnLive && ui.sort==="mcap" && !/^#t-/.test(location.hash) && typeof LIVE!=="undefined" && LIVE.px && Object.keys(LIVE.px).length){
+      resortedOnLive = true; renderList(); return;
+    }
     document.querySelectorAll("[data-sr]").forEach(el=>{ const r=rows.find(x=>x.ticker===el.dataset.sr); if(r) el.innerHTML=sizeRiskInner(r); });
     document.querySelectorAll("[data-live]").forEach(el=>{ const r=rows.find(x=>x.ticker===el.dataset.live); if(r) el.innerHTML=liveInner(r, el.dataset.mode||"card"); });
   }
@@ -430,13 +440,14 @@ window.RLIB_CFG = {
       return true;
     });
     const by = {
+      mcap:(a,b)=> (capKey(b)-capKey(a)) || String(a.ticker).localeCompare(String(b.ticker)),
       status:(a,b)=> STATUS_ORDER.indexOf(stOf(a))-STATUS_ORDER.indexOf(stOf(b)) || (annKey(b)-annKey(a)),
       annual:(a,b)=> annKey(b)-annKey(a),
       date:(a,b)=> String(b.date||"").localeCompare(String(a.date||"")),
       ticker:(a,b)=> String(a.ticker).localeCompare(String(b.ticker)),
       risk:(a,b)=> ((RISK_ORDER[a.risk&&a.risk.l]??9)-(RISK_ORDER[b.risk&&b.risk.l]??9)) || (annKey(b)-annKey(a))
     };
-    return list.sort(by[ui.sort]||by.status);
+    return list.sort(by[ui.sort]||by.mcap);
   }
 
   function upcoming(){
@@ -480,7 +491,7 @@ window.RLIB_CFG = {
     h += '<div class="controls">';
     h += '<input id="q" type="search" placeholder="搜尋代號、公司或關鍵字" value="'+esc(ui.q)+'" aria-label="搜尋">';
     h += '<select id="theme" aria-label="主題"><option value="all">全部主題</option>'+themes.map(t=>'<option'+(t===ui.theme?" selected":"")+'>'+esc(t)+'</option>').join("")+'</select>';
-    h += '<select id="sort" aria-label="排序">'+[["status","依結論"],["annual","依年化（高到低）"],["risk","依風險（低到高）"],["date","依研究日期（新到舊）"],["ticker","依代號"]].map(o=>'<option value="'+o[0]+'"'+(o[0]===ui.sort?" selected":"")+'>'+o[1]+'</option>').join("")+'</select>';
+    h += '<select id="sort" aria-label="排序">'+[["mcap","依市值（大到小）"],["status","依結論"],["annual","依年化（高到低）"],["risk","依風險（低到高）"],["date","依研究日期（新到舊）"],["ticker","依代號"]].map(o=>'<option value="'+o[0]+'"'+(o[0]===ui.sort?" selected":"")+'>'+o[1]+'</option>').join("")+'</select>';
     h += '<label class="chk"><input id="stale" type="checkbox"'+(ui.stale?" checked":"")+'> 只看要重算（超過 '+STALE_DAYS+' 天，'+staleN+' 家）</label>';
     h += '</div>';
 
