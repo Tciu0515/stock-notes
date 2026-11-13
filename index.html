@@ -458,13 +458,18 @@ window.RLIB_CFG = {
   }
   /*LIVE-END*/
 
+  /* 大類別（2026-11-14 用戶要求：篩選用大方向分類；新公司在資料寫 sector 欄位，沒有就查這張表）*/
+  const SECTOR_ORDER=["半導體與 AI 硬體", "科技巨頭與 AI 軟體", "資安", "金融與金融科技", "電商與消費網路", "能源與電力", "醫療與生技", "消費與零售", "工業、國防與未來科技", "大盤 ETF"];
+  const SECTOR_MAP={"NVDA":"半導體與 AI 硬體","AMD":"半導體與 AI 硬體","AVGO":"半導體與 AI 硬體","MU":"半導體與 AI 硬體","MRVL":"半導體與 AI 硬體","TSM":"半導體與 AI 硬體","ASML":"半導體與 AI 硬體","LRCX":"半導體與 AI 硬體","NOK":"半導體與 AI 硬體","ERIC":"半導體與 AI 硬體","2330":"半導體與 AI 硬體","2368":"半導體與 AI 硬體","AAPL":"科技巨頭與 AI 軟體","MSFT":"科技巨頭與 AI 軟體","GOOG":"科技巨頭與 AI 軟體","AMZN":"科技巨頭與 AI 軟體","META":"科技巨頭與 AI 軟體","ORCL":"科技巨頭與 AI 軟體","PLTR":"科技巨頭與 AI 軟體","CRWV":"科技巨頭與 AI 軟體","INTU":"科技巨頭與 AI 軟體","INOD":"科技巨頭與 AI 軟體","TASK":"科技巨頭與 AI 軟體","APX":"科技巨頭與 AI 軟體","CRWD":"資安","PANW":"資安","ZS":"資安","FTNT":"資安","NET":"資安","BB":"資安","SOFI":"金融與金融科技","NU":"金融與金融科技","GRAB":"金融與金融科技","XYZ":"金融與金融科技","FISV":"金融與金融科技","PYPL":"金融與金融科技","BKKT":"金融與金融科技","MORN":"金融與金融科技","BOH":"金融與金融科技","MELI":"電商與消費網路","SE":"電商與消費網路","PDD":"電商與消費網路","BABA":"電商與消費網路","ODD":"電商與消費網路","CEG":"能源與電力","VST":"能源與電力","GEV":"能源與電力","ETN":"能源與電力","VRT":"能源與電力","CCJ":"能源與電力","OKLO":"能源與電力","XOM":"能源與電力","DVN":"能源與電力","PLUG":"能源與電力","LLY":"醫療與生技","NVO":"醫療與生技","ABBV":"醫療與生技","JNJ":"醫療與生技","GILD":"醫療與生技","UNH":"醫療與生技","LEGN":"醫療與生技","HIMS":"醫療與生技","ISRG":"醫療與生技","GEHC":"醫療與生技","KO":"消費與零售","PG":"消費與零售","WMT":"消費與零售","COST":"消費與零售","MCD":"消費與零售","SFM":"消費與零售","SJM":"消費與零售","VITL":"消費與零售","M":"消費與零售","TSLA":"工業、國防與未來科技","SPCX":"工業、國防與未來科技","QBTS":"工業、國防與未來科技","RR":"工業、國防與未來科技","AXON":"工業、國防與未來科技","DD":"工業、國防與未來科技","VOO":"大盤 ETF"};
+  function secOf(r){ return r.sector || SECTOR_MAP[r.ticker] || "其他"; }
+
   function filtered(){
     const q = ui.q.trim().toLowerCase();
     let list = inMarket().filter(r=>{
       if (ui.status!=="all" && stOf(r)!==ui.status) return false;
-      if (ui.theme!=="all" && r.theme!==ui.theme) return false;
+      if (ui.theme!=="all" && secOf(r)!==ui.theme) return false;
       if (ui.stale && !isStale(r)) return false;
-      if (q){ const hay=(r.ticker+" "+(r.name||"")+" "+(r.theme||"")+" "+(r.summary||"")).toLowerCase(); if(!hay.includes(q)) return false; }
+      if (q){ const hay=(r.ticker+" "+(r.name||"")+" "+(r.theme||"")+" "+secOf(r)+" "+(r.summary||"")).toLowerCase(); if(!hay.includes(q)) return false; }
       return true;
     });
     const by = {
@@ -489,7 +494,7 @@ window.RLIB_CFG = {
     const mrows = inMarket();
     const counts = {all:mrows.length}; STATUS_ORDER.forEach(s=>counts[s]=mrows.filter(r=>stOf(r)===s).length);
     if (ui.status!=="all" && !STATUS_ORDER.includes(ui.status)) ui.status="all";
-    const themes = [...new Set(mrows.map(r=>r.theme).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"zh-Hant"));
+    const themes = SECTOR_ORDER.filter(s=>mrows.some(r=>secOf(r)===s)).concat([...new Set(mrows.map(secOf))].filter(s=>!SECTOR_ORDER.includes(s)));
     if (ui.theme!=="all" && !themes.includes(ui.theme)) ui.theme="all";
     const list = filtered();
     const ev = upcoming();
@@ -518,7 +523,7 @@ window.RLIB_CFG = {
     if (CFG.listSlot) h += '<section class="sec" id="slot-list"></section>';
     h += '<div class="controls">';
     h += '<input id="q" type="search" placeholder="搜尋代號、公司或關鍵字" value="'+esc(ui.q)+'" aria-label="搜尋">';
-    h += '<select id="theme" aria-label="主題"><option value="all">全部主題</option>'+themes.map(t=>'<option'+(t===ui.theme?" selected":"")+'>'+esc(t)+'</option>').join("")+'</select>';
+    h += '<select id="theme" aria-label="類別"><option value="all">全部類別</option>'+themes.map(t=>'<option'+(t===ui.theme?" selected":"")+'>'+esc(t)+'</option>').join("")+'</select>';
     h += '<select id="sort" aria-label="排序">'+[["mcap","依市值（大到小）"],["status","依結論"],["annual","依年化（高到低）"],["risk","依風險（低到高）"],["date","依研究日期（新到舊）"],["ticker","依代號"]].map(o=>'<option value="'+o[0]+'"'+(o[0]===ui.sort?" selected":"")+'>'+o[1]+'</option>').join("")+'</select>';
     h += '<label class="chk"><input id="stale" type="checkbox"'+(ui.stale?" checked":"")+'> 只看要重算（超過 '+STALE_DAYS+' 天，'+staleN+' 家）</label>';
     h += '</div>';
