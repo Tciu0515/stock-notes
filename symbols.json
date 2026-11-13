@@ -16,12 +16,14 @@
 "CCJ": "CCJ",
 "CEG": "CEG",
 "COST": "COST",
+"CRWD": "CRWD",
 "CRWV": "CRWV",
 "DD": "DD",
 "DVN": "DVN",
 "ERIC": "ERIC",
 "ETN": "ETN",
 "FISV": "FISV",
+"FTNT": "FTNT",
 "GEHC": "GEHC",
 "GEV": "GEV",
 "GILD": "GILD",
@@ -44,6 +46,7 @@
 "MRVL": "MRVL",
 "MSFT": "MSFT",
 "MU": "MU",
+"NET": "NET",
 "NOK": "NOK",
 "NU": "NU",
 "NVDA": "NVDA",
@@ -51,6 +54,7 @@
 "ODD": "ODD",
 "OKLO": "OKLO",
 "ORCL": "ORCL",
+"PANW": "PANW",
 "PDD": "PDD",
 "PG": "PG",
 "PLTR": "PLTR",
@@ -72,5 +76,6 @@
 "VST": "VST",
 "WMT": "WMT",
 "XOM": "XOM",
-"XYZ": "XYZ"
+"XYZ": "XYZ",
+"ZS": "ZS"
 }
