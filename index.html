@@ -106,6 +106,7 @@ tbody tr:last-child td{border-bottom:0}
 .stale{font-size:.72rem;color:var(--warn);white-space:nowrap}
 .ann-pos{color:var(--good)} .ann-neg{color:var(--bad)} .ann-mid{color:var(--warn)}
 .vt{display:inline-block;font-family:var(--f-ui,inherit);font-size:.7rem;font-weight:700;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle;white-space:nowrap;letter-spacing:0}
+.vs .vw{font-weight:700} .vs .vw.vt-cheap,.vs .vw.vt-fair,.vs .vw.vt-rich,.vs .vw.vt-exp{background:none;padding:0}
 .vt-cheap{background:var(--good-soft);color:var(--good)} .vt-fair{background:var(--info-soft);color:var(--info)} .vt-rich{background:var(--warn-soft);color:var(--warn)} .vt-exp{background:var(--bad-soft);color:var(--bad)}
 
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
@@ -305,6 +306,22 @@ window.RLIB_CFG = {
     const v = a>=20?["便宜","vt-cheap"]:(a>=15?["合理","vt-fair"]:(a>=8?["偏貴","vt-rich"]:["太貴","vt-exp"]));
     return '<span class="vt '+v[1]+'" title="以現價推算年化 '+sgnPct(a)+'：20% 以上便宜、15–20% 合理、8–15% 偏貴、8% 以下太貴">'+v[0]+'</span>';
   }
+  /* one sentence on where the valuation stands now, written from the live annual (or the research-time one) */
+  function valSentence(r){
+    if (stOf(r)==="no" || r.target==null) return "";
+    const live = CFG.live && curAnn(r)!=null;
+    const a = live ? curAnn(r) : (r.annual==null||r.annual==="" ? null : +r.annual);
+    if (a==null || isNaN(a)) return "";
+    const who = live ? "以現價看" : "以研究時股價看";
+    const has15 = entry(r,15)!=null, has20 = entry(r,20)!=null;
+    const lv = a>=20?["便宜","vt-cheap"]:(a>=15?["合理","vt-fair"]:(a>=8?["偏貴","vt-rich"]:["太貴","vt-exp"]));
+    let tail;
+    if (a>=20) tail = has20 ? "，已低於 20% 年化進場價" : "";
+    else if (a>=15) tail = has15 ? "，已在 15% 年化進場價以下" : "";
+    else if (a>=8) tail = has15 ? "，跌到 15% 年化進場價以下再考慮" : "，等股價回落再考慮";
+    else tail = has15 ? "，要跌到 15% 年化進場價以下才考慮" : "，要明顯回落才考慮";
+    return who+'估值<span class="vw '+lv[1]+'">'+lv[0]+'</span>'+tail+'。';
+  }
   function annCls(a){ return a>=15?"ann-pos":(a<0?"ann-neg":"ann-mid"); }
   function gapLine(r, price){
     const hit = (r.entries||[]).filter(e=>+e.p>0 && price<=+e.p && price/+e.p>0.05).sort((a,b)=>b.r-a.r)[0];
@@ -399,6 +416,7 @@ window.RLIB_CFG = {
       resortedOnLive = true; renderList(); return;
     }
     document.querySelectorAll("[data-sr]").forEach(el=>{ const r=rows.find(x=>x.ticker===el.dataset.sr); if(r) el.innerHTML=sizeRiskInner(r); });
+    document.querySelectorAll("[data-vs]").forEach(el=>{ const r=rows.find(x=>x.ticker===el.dataset.vs); if(r) el.innerHTML=valSentence(r); });
     document.querySelectorAll("[data-live]").forEach(el=>{ const r=rows.find(x=>x.ticker===el.dataset.live); if(r) el.innerHTML=liveInner(r, el.dataset.mode||"card"); });
   }
 
@@ -518,7 +536,7 @@ window.RLIB_CFG = {
         h += '<div class="ctop"><div><div class="tk">'+esc(r.ticker)+'</div><div class="nm">'+esc(r.name||"")+(r.theme?' · '+esc(r.theme):'')+'</div></div>'+pill(stOf(r))+'</div>';
         h += '<div class="srow" data-sr="'+esc(r.ticker)+'">'+sizeRiskInner(r)+'</div>';
         h += '<div data-live="'+esc(r.ticker)+'" data-mode="card">'+liveInner(r,"card")+'</div>';
-        if (r.summary) h += '<div class="sum">'+esc(r.summary)+'</div>';
+        if (r.summary || valSentence(r)) h += '<div class="sum">'+esc(r.summary||"")+' <span class="vs" data-vs="'+esc(r.ticker)+'">'+valSentence(r)+'</span></div>';
         h += '<div class="cfoot"><span>'+depthTag(r.depth)+(isStale(r)?' <span class="stale">要重算</span>':'')+'</span><span class="num">研究日 '+esc(r.date||"—")+'</span></div>';
         h += '</div>';
       });
@@ -566,7 +584,7 @@ window.RLIB_CFG = {
     if (CFG.live) h += liveBar();
     h += '<div class="ext"><a href="https://finance.yahoo.com/quote/'+encodeURIComponent(yahooSym(r))+'" target="_blank" rel="noopener">在 Yahoo 財經看即時股價與走勢 ↗</a></div>';
     if (CFG.detailSlot) h += '<div id="slot-detail"></div>';
-    if (r.summary) h += '<div class="verdict">'+esc(r.summary)+'</div>';
+    if (r.summary || valSentence(r)) h += '<div class="verdict">'+esc(r.summary||"")+' <span class="vs" data-vs="'+esc(r.ticker)+'">'+valSentence(r)+'</span></div>';
 
     h += '<div class="grid2">';
     h += '<section class="sec"><h2>業務</h2>'+para(r.business)+'</section>';
