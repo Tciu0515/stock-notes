@@ -411,8 +411,16 @@ window.RLIB_CFG = {
     return ({mega:3e11, large:5e10, mid:6e9, small:1e9, micro:1e8})[r.size] || 0;
   }
   let resortedOnLive = false;
+  function liveOrderChanged(){
+    if (/^#t-/.test(location.hash) || !["mcap","annual","status","risk"].includes(ui.sort)) return false;
+    const a=document.activeElement; if (a && a.id==="q") return false;
+    const cur=[...document.querySelectorAll(".cards > .card")].map(e=>e.dataset.go);
+    if (!cur.length) return false;
+    return cur.join("|") !== filtered().map(r=>r.ticker).join("|");
+  }
   function paintLiveParts(){
-    if (!resortedOnLive && ui.sort==="mcap" && !/^#t-/.test(location.hash) && typeof LIVE!=="undefined" && LIVE.px && Object.keys(LIVE.px).length){
+    /* re-sort once prices arrive (and on later refreshes) when the order depends on them: market cap, live annual, or their tie-breakers */
+    if (typeof LIVE!=="undefined" && LIVE.px && Object.keys(LIVE.px).length && liveOrderChanged()){
       resortedOnLive = true; renderList(); return;
     }
     document.querySelectorAll("[data-sr]").forEach(el=>{ const r=rows.find(x=>x.ticker===el.dataset.sr); if(r) el.innerHTML=sizeRiskInner(r); });
