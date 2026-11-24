@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy_first.outputs.page_url || steps.deploy_retry.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - id: pages
@@ -37,5 +37,15 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
-      - id: deploy
+      # GitHub sometimes can't see the just-uploaded file yet; wait, and try once more if needed.
+      - name: Wait for upload to register
+        run: sleep 20
+      - id: deploy_first
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Wait before retry
+        if: steps.deploy_first.outcome == 'failure'
+        run: sleep 60
+      - id: deploy_retry
+        if: steps.deploy_first.outcome == 'failure'
         uses: actions/deploy-pages@v4
